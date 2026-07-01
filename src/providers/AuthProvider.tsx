@@ -2,8 +2,9 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { getUserApi } from "@/lib/api/user.api";
-import { loginApi, logoutApi, registerApi } from "@/lib/api/auth.api";
-import { usePathname, useRouter } from "next/navigation";
+import { registerApi } from "@/lib/api/auth.api";
+import { login as loginAction, logout as logoutAction } from "@/app/actions/auth";
+import { usePathname } from "next/navigation";
 import { TUser, TAuthContextType } from "@/types/auth.types";
 
 const AuthContext = createContext<TAuthContextType | undefined>(undefined);
@@ -19,7 +20,6 @@ export const useAuth = () => {
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<TUser | null>(null);
   const pathname = usePathname();
-  const router = useRouter();
 
   const getUser = async () => {
     try {
@@ -36,14 +36,17 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
   };
 
   const login = async (email: string, password: string) => {
-    const userData = await loginApi(email, password);
-    setUser(userData);
+    const result = await loginAction({ email, password });
+    if (!result.success) {
+      throw new Error(result.error || "로그인에 실패했습니다");
+    }
+    const user = result.user?.user ?? result.user;
+    setUser(user);
   };
 
   const logout = async () => {
-    await logoutApi();
+    await logoutAction();
     setUser(null);
-    router.push("/");
   };
 
   useEffect(() => {
