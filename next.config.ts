@@ -12,8 +12,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { hostname: "example.com" },
-      { hostname: "team3-snack-s3.s3.amazonaws.com" },
-      { hostname: "d2beg4tvxabcw1.cloudfront.net" },
+      { hostname: "oyubhgcsimzjasetkixl.supabase.co" },
     ],
   },
 };
