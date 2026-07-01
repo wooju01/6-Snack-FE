@@ -23,11 +23,9 @@ export async function login(data: LoginData) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
-      credentials: "include", // 쿠키를 받기 위해 필요
     });
 
     const result = await response.json();
-    console.log("Login response:", result); // 디버깅용
 
     if (!response.ok) {
       return {
@@ -36,8 +34,22 @@ export async function login(data: LoginData) {
       };
     }
 
-    // 백엔드에서 쿠키로 토큰을 설정하므로 별도 처리 불필요
-    // 응답에서 사용자 정보만 추출
+    const cookieStore = await cookies();
+    cookieStore.set("accessToken", result.accessToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      expires: new Date(result.accessTokenExpires),
+      path: "/",
+    });
+    cookieStore.set("refreshToken", result.refreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      expires: new Date(result.refreshTokenExpires),
+      path: "/",
+    });
+
     return {
       success: true,
       user: result,
