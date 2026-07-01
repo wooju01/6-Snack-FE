@@ -1,20 +1,19 @@
 import { logout } from "@/app/actions/auth";
 import { refreshAccessToken } from "./auth.api";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+// 브라우저에서의 API 요청은 Next.js 프록시를 통해 전달 (cross-domain 쿠키 문제 해결)
+const PROXY_BASE_URL = "/api/proxy";
 
 export const cookieFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
   const method = options.method || "GET";
-  // 개발 완료후 삭제
-  console.log(`🌐 API 요청: ${method} ${API_BASE_URL}${path}`);
+  console.log(`🌐 API 요청: ${method} ${PROXY_BASE_URL}${path}`);
 
   // fetch 호출 부분을 함수로 분리
   const request = async () => {
     // FormData를 보낼 때는 Content-Type 헤더를 설정하지 않아야 브라우저가 자동으로 boundary를 설정합니다
     const isFormData = options.body instanceof FormData;
 
-    return await fetch(`${API_BASE_URL}${path}`, {
-      credentials: "include",
+    return await fetch(`${PROXY_BASE_URL}${path}`, {
       cache: "no-store",
       headers: {
         ...(isFormData ? {} : { "Content-Type": "application/json" }),
@@ -55,9 +54,9 @@ export const cookieFetch = async <T>(path: string, options: RequestInit = {}): P
 
 export const defaultFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
   const method = options.method || "GET";
-  console.log(`🌐 API 요청: ${method} ${API_BASE_URL}${path}`);
+  console.log(`🌐 API 요청: ${method} ${PROXY_BASE_URL}${path}`);
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${PROXY_BASE_URL}${path}`, {
     cache: "no-store",
     headers: {
       "Content-Type": "application/json",

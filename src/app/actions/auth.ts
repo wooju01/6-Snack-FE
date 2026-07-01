@@ -83,20 +83,25 @@ export async function register(data: RegisterData) {
 
 export async function logout() {
   try {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get("accessToken")?.value;
+    const refreshToken = cookieStore.get("refreshToken")?.value;
+
+    const cookieParts: string[] = [];
+    if (accessToken) cookieParts.push(`accessToken=${accessToken}`);
+    if (refreshToken) cookieParts.push(`refreshToken=${refreshToken}`);
+
     await fetch(`${BASE_URL}/auth/logout`, {
       method: "POST",
-      credentials: "include", // 쿠키를 보내기 위해 필요
+      headers: { Cookie: cookieParts.join("; ") },
     });
 
-    // 로컬 쿠키도 삭제
-    const cookieStore = await cookies();
     cookieStore.delete("accessToken");
     cookieStore.delete("refreshToken");
 
     redirect("/login");
   } catch (error) {
     console.error("Logout error:", error);
-    // 에러가 발생해도 쿠키는 삭제
     const cookieStore = await cookies();
     cookieStore.delete("accessToken");
     cookieStore.delete("refreshToken");
