@@ -10,9 +10,11 @@ const nextConfig: NextConfig = {
   //   ignoreBuildErrors: true, // TypeScript 오류도 무시하려면
   // },
   images: {
+    dangerouslyAllowSVG: true,
     remotePatterns: [
       { hostname: "example.com" },
       { hostname: "oyubhgcsimzjasetkixl.supabase.co" },
+      { hostname: "d2beg4tvxabcw1.cloudfront.net" },
     ],
   },
 };
