@@ -13,8 +13,16 @@ type TCardProps = {
   imageUrl: string | StaticImageData;
 };
 
+function isInvalidImageUrl(url: string | StaticImageData): boolean {
+  if (typeof url !== "string") return false;
+  // 삭제된 AWS CloudFront/S3 이미지는 placeholder로 대체
+  return url.includes("cloudfront.net") || url.includes("amazonaws.com");
+}
+
 export default function Card({ name, purchaseCount, price, imageUrl }: TCardProps) {
-  const [src, setSrc] = useState<string | StaticImageData>(imageUrl);
+  const [src, setSrc] = useState<string | StaticImageData>(
+    isInvalidImageUrl(imageUrl) ? DEFAULT_IMAGE : imageUrl
+  );
 
   return (
     <div className="w-40 h-64 md:w-96 md:h-auto flex flex-col justify-start items-start gap-3.5 md:gap-5">
