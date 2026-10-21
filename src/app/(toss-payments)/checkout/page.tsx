@@ -18,6 +18,7 @@ export default function CheckoutPage() {
   });
   const [ready, setReady] = useState<boolean>(false);
   const [widgets, setWidgets] = useState<TossPaymentsWidgets | null>(null);
+  const [widgetError, setWidgetError] = useState<string | null>(null);
 
   const router = useRouter();
   const { user } = useAuth();
@@ -25,7 +26,7 @@ export default function CheckoutPage() {
   // Zustand로 관리하고 있는 order 정보
   const order = useOrderStore((state) => state.order);
 
-  const clientKey = process.env.NEXT_PUBLIC_CLIENT_KEY!;
+  const clientKey = process.env.NEXT_PUBLIC_CLIENT_KEY;
   const customerKey = user ? user!.id : "";
 
   usePreventLeave(order?.id ?? "");
@@ -38,6 +39,13 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     async function fetchPaymentWidgets() {
+      if (!clientKey) {
+        console.error("[checkout] NEXT_PUBLIC_CLIENT_KEY 환경변수가 설정되지 않았습니다.");
+        setWidgetError("결제 설정이 올바르지 않습니다. 관리자에게 문의해주세요.");
+        return;
+      }
+      if (!customerKey) return; // 유저 정보 로드 후 초기화
+
       // ------  결제위젯 초기화 ------
       const tossPayments = await loadTossPayments(clientKey);
       // 회원 결제
@@ -48,7 +56,10 @@ export default function CheckoutPage() {
       setWidgets(widgets);
     }
 
-    fetchPaymentWidgets();
+    fetchPaymentWidgets().catch((error) => {
+      console.error("[checkout] 결제위젯 초기화 실패:", error);
+      setWidgetError("결제 화면을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+    });
   }, [clientKey, customerKey]);
 
   useEffect(() => {
@@ -76,7 +87,10 @@ export default function CheckoutPage() {
       setReady(true);
     }
 
-    renderPaymentWidgets();
+    renderPaymentWidgets().catch((error) => {
+      console.error("[checkout] 결제위젯 렌더링 실패:", error);
+      setWidgetError("결제 화면을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.");
+    });
   }, [widgets, amount]);
 
   useEffect(() => {
@@ -181,6 +195,10 @@ export default function CheckoutPage() {
               </button>
             </div>
           </>
+        ) : widgetError ? (
+          <p role="alert" className="text-center font-medium text-[16px]/[24px] py-[40px]">
+            {widgetError}
+          </p>
         ) : (
           <div role="status" aria-label="로딩 중" className="flex justify-center items-center -mb-[24px]">
             <div className="size-[20px] border-[3px] border-t-[3px] border-blue-500 border-t-primary-100 rounded-full animate-spin"></div>
