@@ -5,20 +5,16 @@ import { useEffect } from "react";
 export function usePreventLeave(orderId: string) {
   // 취소 API 호출
   async function cancel(orderId: string) {
-    const response = await fetch(
-      process.env.NODE_ENV === "production"
-        ? "https://api.5nack.site/payments/cancel"
-        : "http://localhost:8080/payments/cancel",
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ orderId }),
-        credentials: "include",
-        cache: "no-store",
+    // 다른 API와 동일하게 Next.js 프록시를 거쳐야 인증 쿠키가 BE로 전달됨
+    const response = await fetch("/api/proxy/payments/cancel", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({ orderId }),
+      credentials: "include",
+      cache: "no-store",
+    });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
