@@ -5,7 +5,9 @@ import type { NextRequest } from "next/server";
 function getUserRoleFromToken(token: string): string | null {
   try {
     // JWT의 payload 부분 디코딩 (base64url 디코딩)
-    const payload = JSON.parse(atob(token.split(".")[1]));
+    const base64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+    const padded = base64.padEnd(base64.length + ((4 - (base64.length % 4)) % 4), "=");
+    const payload = JSON.parse(atob(padded));
     return payload.role || null;
   } catch {
     return null;

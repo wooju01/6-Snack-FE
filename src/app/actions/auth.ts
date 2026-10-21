@@ -82,8 +82,9 @@ export async function register(data: RegisterData) {
 }
 
 export async function logout() {
+  const cookieStore = await cookies();
+
   try {
-    const cookieStore = await cookies();
     const accessToken = cookieStore.get("accessToken")?.value;
     const refreshToken = cookieStore.get("refreshToken")?.value;
 
@@ -95,17 +96,13 @@ export async function logout() {
       method: "POST",
       headers: { Cookie: cookieParts.join("; ") },
     });
-
-    cookieStore.delete("accessToken");
-    cookieStore.delete("refreshToken");
-
-    redirect("/login");
   } catch (error) {
     console.error("Logout error:", error);
-    const cookieStore = await cookies();
+  } finally {
     cookieStore.delete("accessToken");
     cookieStore.delete("refreshToken");
-
-    redirect("/login");
   }
+
+  // redirect는 내부적으로 예외를 던지므로 try/catch 밖에서 호출
+  redirect("/login");
 }

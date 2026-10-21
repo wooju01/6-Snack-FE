@@ -4,10 +4,10 @@ import { refreshAccessToken } from "./auth.api";
 // 브라우저에서의 API 요청은 Next.js 프록시를 통해 전달 (cross-domain 쿠키 문제 해결)
 const PROXY_BASE_URL = "/api/proxy";
 
-export const cookieFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
-  const method = options.method || "GET";
-  console.log(`🌐 API 요청: ${method} ${PROXY_BASE_URL}${path}`);
+// 동시에 여러 요청이 401을 받아도 토큰 갱신은 한 번만 수행하도록 진행 중인 요청을 공유
+let refreshPromise: Promise<unknown> | null = null;
 
+export const cookieFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
   // fetch 호출 부분을 함수로 분리
   const request = async () => {
     // FormData를 보낼 때는 Content-Type 헤더를 설정하지 않아야 브라우저가 자동으로 boundary를 설정합니다
@@ -15,11 +15,11 @@ export const cookieFetch = async <T>(path: string, options: RequestInit = {}): P
 
     return await fetch(`${PROXY_BASE_URL}${path}`, {
       cache: "no-store",
+      ...options,
       headers: {
         ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...(options.headers || {}),
       },
-      ...options,
     });
   };
 
@@ -29,9 +29,10 @@ export const cookieFetch = async <T>(path: string, options: RequestInit = {}): P
 
   if (response.status === 401 && !isRefreshRequest) {
     try {
-      console.log("🔄 액세스 토큰 갱신 시도");
-      await refreshAccessToken();
-      console.log("✅ 액세스 토큰 갱신 성공, 원본 요청 재시도");
+      refreshPromise ??= refreshAccessToken().finally(() => {
+        refreshPromise = null;
+      });
+      await refreshPromise;
       response = await request();
     } catch (refreshError) {
       console.error("❌ 액세스 토큰 재발급 실패:", refreshError);
@@ -53,16 +54,13 @@ export const cookieFetch = async <T>(path: string, options: RequestInit = {}): P
 };
 
 export const defaultFetch = async <T>(path: string, options: RequestInit = {}): Promise<T> => {
-  const method = options.method || "GET";
-  console.log(`🌐 API 요청: ${method} ${PROXY_BASE_URL}${path}`);
-
   const response = await fetch(`${PROXY_BASE_URL}${path}`, {
     cache: "no-store",
+    ...options,
     headers: {
       "Content-Type": "application/json",
       ...(options.headers || {}),
     },
-    ...options,
   });
 
   if (!response.ok) {
